@@ -1,4 +1,28 @@
 (function () {
+  const themeToggle = document.querySelector("[data-theme-toggle]");
+  const themeLabel = themeToggle && themeToggle.querySelector("[data-theme-label]");
+  const root = document.documentElement;
+
+  function applyTheme(theme, persist) {
+    root.dataset.theme = theme;
+    if (persist) {
+      try { localStorage.setItem("skill-state-theme", theme); } catch (error) {}
+    }
+    if (themeToggle) {
+      const dark = theme === "dark";
+      themeToggle.setAttribute("aria-pressed", String(dark));
+      themeToggle.setAttribute("aria-label", dark ? "Включить светлую тему" : "Включить тёмную тему");
+      if (themeLabel) themeLabel.textContent = dark ? "светлая" : "тёмная";
+    }
+  }
+
+  if (themeToggle) {
+    applyTheme(root.dataset.theme === "dark" ? "dark" : "light", false);
+    themeToggle.addEventListener("click", function () {
+      applyTheme(root.dataset.theme === "dark" ? "light" : "dark", true);
+    });
+  }
+
   const main = document.querySelector("main");
   if (main) {
     [

@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Полный русский перевод статьи SKILL.state: Scalable Long-Horizon Agent Skills, arXiv:2608.26263v3.">
   <title>SKILL.state — русский перевод</title>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("skill-state-theme");
+        var theme = saved === "dark" || saved === "light" ? saved : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+      } catch (error) {}
+    }());
+  </script>
   <link rel="stylesheet" href="styles.css">
   <script>
     window.MathJax = {
@@ -22,6 +31,7 @@
         <a class="brand" href="#top">SKILL.state / ru</a>
         <div class="top-actions">
           <button type="button" data-print>печать</button>
+          <button type="button" data-theme-toggle aria-pressed="false" aria-label="Включить тёмную тему"><span data-theme-label>тёмная</span></button>
           <a href="https://arxiv.org/abs/2608.26263v3" rel="noreferrer">оригинал</a>
         </div>
       </div>

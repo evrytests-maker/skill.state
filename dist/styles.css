@@ -9,6 +9,25 @@
   --warm: #9b3c2e;
   --code: #ecebe7;
   --link: #0f587d;
+  --figure: #fff;
+  --focus: #a8492f;
+}
+
+html { color-scheme: light; }
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #15191c;
+  --paper-2: #20272b;
+  --ink: #edf1f2;
+  --muted: #b9c3c8;
+  --rule: #4b565c;
+  --accent: #8abbd5;
+  --accent-soft: #29404b;
+  --warm: #ee9a83;
+  --code: #252e33;
+  --link: #8ecbe9;
+  --figure: #1b2226;
+  --focus: #ffaf95;
 }
 
 * { box-sizing: border-box; }
@@ -24,7 +43,7 @@ body {
 
 a { color: var(--link); text-decoration-thickness: .08em; text-underline-offset: .14em; }
 a:hover { color: var(--warm); }
-:focus-visible { outline: 3px solid #c76a41; outline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
 .site-shell { min-height: 100vh; }
 .topbar {
@@ -63,8 +82,10 @@ a:hover { color: var(--warm); }
   font: 600 .78rem/1.2 "DejaVu Sans", Arial, sans-serif;
   text-decoration: none;
   cursor: pointer;
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
 }
 .top-actions button:hover, .top-actions a:hover { background: var(--paper-2); color: var(--ink); }
+.top-actions [data-theme-toggle] { min-width: 6.1rem; min-height: 44px; white-space: nowrap; }
 
 .layout {
   max-width: 1240px;
@@ -237,7 +258,7 @@ td.center, th.center { text-align: center; }
   margin: 1.6rem 0 1.5rem;
   padding: 1rem;
   border: 1px solid var(--rule);
-  background: #fff;
+  background: var(--figure);
 }
 .figure img { display: block; width: min(100%, 700px); height: auto; margin: 0 auto; }
 .figure figcaption { margin-top: .75rem; color: var(--muted); font-size: .86rem; line-height: 1.45; }
@@ -291,7 +312,7 @@ footer {
 }
 
 @media print {
-  :root { --paper: #fff; --paper-2: #fff; --ink: #000; --muted: #333; --rule: #999; }
+  :root, html[data-theme="dark"] { color-scheme: light; --paper: #fff; --paper-2: #fff; --ink: #000; --muted: #333; --rule: #999; --figure: #fff; }
   body { background: #fff; font-size: 11pt; line-height: 1.45; }
   .topbar, .toc, .top-actions { display: none !important; }
   .layout { display: block; max-width: 100%; padding: 0; }
