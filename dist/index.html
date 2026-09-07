@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Полный русский перевод статьи SKILL.state: Scalable Long-Horizon Agent Skills, arXiv:2608.26263v3.">
+  <title>SKILL.state — русский перевод</title>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    window.MathJax = {
+      tex: { tags: "ams", inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"], ["$$", "$$"]] },
+      options: { skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"] },
+      svg: { fontCache: "global" }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#top">SKILL.state / ru</a>
+        <div class="top-actions">
+          <button type="button" data-print>печать</button>
+          <a href="https://arxiv.org/abs/2608.26263v3" rel="noreferrer">оригинал</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <nav class="toc" aria-label="Оглавление">
+        <p class="toc-title">содержание</p>
+        <ol>
+          <li><a href="#abstract">Аннотация</a></li>
+          <li><a href="#sec-1">1 Введение</a></li>
+          <li>
+            <a href="#sec-2">2 Связанные работы</a>
+            <ol>
+              <li><a href="#sec-2-1">2.1 Процедурные навыки</a></li>
+              <li><a href="#sec-2-2">2.2 Архитектуры памяти</a></li>
+              <li><a href="#sec-2-3">2.3 Состояние диалога</a></li>
+              <li><a href="#sec-2-4">2.4 Управление контекстом</a></li>
+            </ol>
+          </li>
+          <li>
+            <a href="#sec-3">3 SKILL.state</a>
+            <ol>
+              <li><a href="#sec-3-1">3.1 Состояние и схема</a></li>
+              <li><a href="#sec-3-2">3.2 Рассуждение и переходы</a></li>
+              <li><a href="#sec-3-3">3.3 Сложность</a></li>
+            </ol>
+          </li>
+          <li>
+            <a href="#sec-4">4 Бенчмарки оценки</a>
+            <ol>
+              <li><a href="#sec-4-1">4.1 SkillExecBench</a></li>
+              <li><a href="#sec-4-2">4.2 Публичные бенчмарки</a></li>
+              <li><a href="#sec-4-3">4.3 Метрики</a></li>
+            </ol>
+          </li>
+          <li>
+            <a href="#sec-5">5 Эксперименты</a>
+            <ol>
+              <li><a href="#sec-5-1">5.1 Настройка</a></li>
+              <li><a href="#sec-5-2">5.2 Масштабирование</a></li>
+              <li><a href="#sec-5-3">5.3 Шум</a></li>
+              <li><a href="#sec-5-4">5.4 Восстановление</a></li>
+              <li><a href="#sec-5-5">5.5 Публичные тесты</a></li>
+              <li><a href="#sec-5-6">5.6 Сопоставимый бюджет</a></li>
+              <li><a href="#sec-5-7">5.7 Ошибки</a></li>
+            </ol>
+          </li>
+          <li><a href="#sec-6">6 Заключение</a></li>
+          <li><a href="#sec-7">7 Ограничения</a></li>
+          <li><a href="#references">Литература</a></li>
+          <li>
+            <a href="#appendix-a">Приложения</a>
+            <ol>
+              <li><a href="#appendix-a">A. Промпты</a></li>
+              <li><a href="#appendix-b">B. SkillExecBench</a></li>
+              <li><a href="#appendix-c">C. Конструирование шума</a></li>
+              <li><a href="#appendix-d">D. Дополнительные результаты</a></li>
+            </ol>
+          </li>
+        </ol>
+      </nav>
+
+      <main id="top">
+        <header class="document-header">
+          <p class="kicker">полный перевод научной статьи · arXiv:2608.26263v3</p>
+          <h1>SKILL.state: Масштабируемые агентные навыки с длинным горизонтом выполнения</h1>
+          <p class="subtitle">SKILL.state: Scalable Long-Horizon Agent Skills</p>
+          <p class="authors"><strong>Sanket Badhe</strong><sup>1</sup>, <strong>Priyanka Tiwari</strong><sup>2</sup>, <strong>Jonghyun Chung</strong><sup>1</sup></p>
+          <p class="affiliations"><sup>1</sup> Google LLC · <sup>2</sup> Purdue University<br>Корреспонденция: <a href="mailto:sanketbadhe@google.com">sanketbadhe@google.com</a></p>
+          <div class="metadata">
+            <span>версия: <strong>v3</strong></span>
+            <span>последняя редакция: 2 сентября 2026</span>
+            <a href="https://arxiv.org/abs/2608.26263v3" rel="noreferrer">страница arXiv</a>
+            <a href="https://arxiv.org/pdf/2608.26263v3" rel="noreferrer">PDF оригинала</a>
+            <a href="https://doi.org/10.48550/arXiv.2608.26263" rel="noreferrer">DOI</a>
+            <a href="https://creativecommons.org/licenses/by/4.0/" rel="noreferrer">CC BY 4.0</a>
+          </div>
+        </header>
+
+        <div id="abstract" class="abstract">
+          <h2>Аннотация</h2>
+          <p>Большие языковые модели (LLMs) всё чаще выступают в роли автономных агентов, выполняющих сложные, длительно выполняемые процедурные навыки. Существующие среды выполнения (runtime) агентов поддерживают выполнение, непрерывно добавляя наблюдения, действия и промежуточные следы рассуждений во всё увеличивающуюся историю диалога, что вызывает ухудшение задержки и сбои из-за отравления контекста при длинных горизонтах выполнения. Мы представляем SKILL.state — архитектуру среды выполнения (runtime), которая заменяет историю диалога, доступную только для добавления, явным изменяемым состоянием выполнения. На каждом шаге выполнения модель получает только неизменяемую спецификацию навыка, текущее структурированное состояние выполнения и последнее наблюдение. Промежуточное рассуждение отбрасывается сразу после создания проверенного обновления состояния, предотвращая рост промпта вместе с историей выполнения. На различных наборах данных, моделях и средах выполнения SKILL.state повышает точность выполнения задач, одновременно существенно сокращая совокупное потребление токенов. Наши результаты демонстрируют, что явное состояние выполнения представляет собой эффективную, не зависящую от архитектуры абстракцию для масштабируемых навыков агентов с длинным горизонтом выполнения.</p>
+        </div>
+
+        <div class="source-note">
+          <strong>Источник и версия.</strong> Перевод выполнен по arXiv <a href="https://arxiv.org/abs/2608.26263v3" rel="noreferrer">2608.26263v3</a>, последняя редакция — 2 сентября 2026 года. Полнота сверялась по HTML, PDF и TeX-архиву этой версии. Оригинальные имена, идентификаторы, формулы, числа, ссылки и ключи кода сохранены.
+        </div>
+
+        <section id="sec-1">
+          <h2>1 Введение</h2>
+
+          <p>Большие языковые модели (LLMs) быстро эволюционировали от пассивных языковых интерфейсов в автономные системы, способные к итеративному рассуждению, использованию инструментов и взаимодействию с внешними средами <span class="citation">(<a href="#bib.bib1">Yao et al., 2022</a>; <a href="#bib.bib3">Schick et al., 2023</a>; <a href="#bib.bib4">Qin et al., 2024</a>; <a href="#bib.bib5">Wu et al., 2023</a>)</span>. Недавние работы также демонстрируют, что эти возможности могут быть инкапсулированы в повторно используемые процедурные навыки, позволяющие агентам выполнять разработку программного обеспечения, автоматизацию рабочих процессов, взаимодействие с веб-средой и научные открытия посредством модульных композиций специализированных форм поведения <span class="citation">(<a href="#bib.bib12">Badhe et al., 2026</a>)</span>. По мере того как агенты всё чаще выполняют длительные процедуры, само выполнение становится проблемой систем, а не исключительно проблемой рассуждения.</p>
+
+          <p>Современные среды выполнения (runtime) агентов почти повсеместно используют диалоговую модель выполнения. На каждом шаге выполнения языковая модель получает исходную спецификацию навыка вместе с постоянно растущим транскриптом предыдущих рассуждений, действий, наблюдений и выводов инструментов <span class="citation">(<a href="#bib.bib1">Yao et al., 2022</a>; <a href="#bib.bib6">Mialon et al., 2023</a>)</span>. Хотя системы памяти смягчают рост контекста посредством суммаризации или извлечения <span class="citation">(<a href="#bib.bib2">Packer et al., 2023</a>; <a href="#bib.bib9">Wang et al., 2023</a>; <a href="#bib.bib8">Zhong et al., 2023</a>)</span>, они сохраняют ту же семантику выполнения: будущие решения обусловливаются текстовыми реконструкциями прошлого выполнения вместо явного представления текущего состояния выполнения.</p>
+
+          <p>Такая конструкция вводит фундаментальные ограничения для процедурных навыков с длинным горизонтом выполнения. Размер промпта растёт вместе с длиной выполнения, увеличивая потребление токенов и стоимость инференса <span class="citation">(<a href="#bib.bib11">Liu et al., 2024</a>; <a href="#bib.bib14">Xiao et al., 2024a</a>)</span>. Исторические наблюдения и устаревшее рассуждение остаются встроенными в контекст ещё долго после того, как перестают быть релевантными, требуя от модели постоянно отличать текущие факты от исторических артефактов. Следовательно, корректность выполнения всё больше зависит от восстановления состояния из накопленной текстовой истории.</p>
+
+          <p>В этой статье мы вводим SKILL.state, архитектуру среды выполнения (runtime), которая переформулирует выполнение процедурного навыка как явные переходы состояния вместо накопления истории диалога. Рисунок <a href="#S3.F1">1</a> представляет обзор предложенной среды выполнения (runtime). На шаге выполнения \(t\) языковая модель получает только три входа:</p>
+
+          <div id="S1.E1" class="equation">\[ A_t = (P,\Sigma_t,O_t), \tag{1} \]</div>
+
+          <p>где \(P\) обозначает неизменяемую процедурную спецификацию, \(\Sigma_t\) — структурированное состояние выполнения, а \(O_t\) — последнее наблюдение среды. После создания проверенного обновления состояния промежуточный след рассуждений отбрасывается, и сохраняется только обновлённое состояние выполнения. Следовательно, выполнение строго зависит от текущего состояния мира вместо воспроизведения исторических траекторий.</p>
+
+          <p>Чтобы оценить эту гипотезу, мы оцениваем SKILL.state на синтетических и реальных бенчмарках: SkillExecBench, контролируемом бенчмарке, предназначенном для выполнения процедурных навыков с длинным горизонтом выполнения в условиях масштабирования, шума и восстановления состояния; InterCode CTF <span class="citation">(<a href="#bib.bib25">Yang et al., 2023</a>)</span>, включающем интерактивную эксплуатацию терминала Linux; и Sierra \(\tau\)-Bench <span class="citation">(<a href="#bib.bib26">Yao et al., 2024</a>)</span>, оценивающем многоходовые рабочие процессы обслуживания клиентов с использованием сложных API баз данных.</p>
+
+          <p>Экспериментальные результаты демонстрируют, что явное состояние выполнения существенно повышает масштабируемость процедурных навыков с длинным горизонтом выполнения, поддерживая ограниченный размер промпта, одновременно сокращая потребление токенов и превосходя базовые методы, основанные на истории и сжатии, для нескольких семейств моделей.</p>
+
+          <p>Наши вклады обобщены следующим образом:</p>
+          <ul>
+            <li>Мы предлагаем SKILL.state, архитектуру среды выполнения (runtime), которая выполняет процедурные навыки посредством явного структурированного состояния выполнения, при этом промежуточное рассуждение отбрасывается после каждого шага, доказывая строго ограниченный объём промпта \(\mathcal{O}(1)\) и совокупную сложность по токенам \(\mathcal{O}(T)\).</li>
+            <li>Мы представляем SkillExecBench наряду с оценками на общедоступных бенчмарках (InterCode CTF и Sierra \(\tau\)-Bench) для оценки выполнения процедурных навыков с длинным горизонтом выполнения в последовательных средах, сохраняющих состояние.</li>
+            <li>На нескольких горизонтах выполнения и среди базовых сред выполнения (runtime) мы демонстрируем, что выполнение, ориентированное на состояние, сохраняет конкурентоспособные результаты выполнения задач, одновременно существенно сокращая рост промпта и совокупное потребление токенов как для проприетарных моделей, так и для моделей с открытыми весами.</li>
+          </ul>
+        </section>
+
+        <section id="appendix-a" class="appendix">
+          <h2>Приложение A. Промпты среды выполнения</h2>
+          <p>В этом приложении приведены точные системные промпты, использованные четырьмя оцениваемыми средами выполнения. Для обеспечения воспроизводимости все промпты представлены в точности в том виде, в каком они динамически конструировались и форматировались в цикле выполнения бенчмарка.</p>
+
+          <h3 id="appendix-a-1">A.1 Среда выполнения Prompt (стиль ReAct)</h3>
+          <pre class="code-block"><code>Instructions:
+{skill.instructions}
+
+History:
+Observation: {history[0].observation}
+Reasoning &amp; Action: {history[0].response}
+[... Appends all previous observations and actions ...]
+
+Latest Observation: {observation}
+Generate your next reasoning and action (format 'Action: &lt;cmd&gt;'):</code></pre>
+
+          <h3 id="appendix-a-2">A.2 Среда выполнения с расширением памяти</h3>
+          <pre class="code-block"><code>Instructions:
+{skill.instructions}
+
+Summarized History:
+{summary_string_of_past_steps}
+
+Recent History:
+Observation: {recent_observations[0]}
+Response: {recent_responses[0]}
+[... Appends the 3 most recent turns ...]
+
+Latest Observation: {observation}
+Generate your next reasoning and action (format 'Action: &lt;cmd&gt;'):</code></pre>
+
+          <h3 id="appendix-a-3">A.3 Среда выполнения Stateful (стиль LangGraph)</h3>
+          <pre class="code-block"><code>Instructions:
+{skill.instructions}
+
+Current State:
+{json.dumps(state, indent=2)}
+
+History:
+Observation: {history[0].observation}
+Response: {history[0].response}
+[... Appends all previous observations and actions ...]
+
+Latest Observation: {observation}
+Update the state if necessary, provide reasoning, and output 'Action: &lt;cmd&gt;'.
+To update state, use the format: StateUpdate: {"key": "value"}</code></pre>
+
+          <h3 id="appendix-a-4">A.4 Среда выполнения SKILL.state</h3>
+          <pre class="code-block"><code>Instructions:
+{skill.instructions}
+
+Skill Execution State:
+&#96;&#96;&#96;json
+{json.dumps(state, separators=(',', ':'))}
+Latest Observation: {observation}
+
+Provide your response with:
+
+1. Step-by-step reasoning (will be discarded after execution)
+2. A JSON block fenced with json ...  containing both your State Patch and your Action. The JSON block MUST have exactly these two keys: { "state_patch": { &lt;dict: your state updates, set keys to null to delete&gt; }, "action": "&lt;string: the exact command you want to execute&gt;" } </code></pre>
+          <p class="caption">Примечание: заполнитель <code>{skill.instructions}</code> динамически подставляет предметно-ориентированный системный промпт задачи (например, персону агента, доступное пространство действий и правила среды). Благодаря этому во всех оценках агент получает одни и те же базовые инструкции, а управление контекстом остаётся единственной независимой переменной.</p>
+        </section>
+
+        <section id="appendix-b" class="appendix">
+          <h2>Приложение B. Детали реализации SkillExecBench</h2>
+          <p>Чтобы сосредоточить внимание на основных экспериментальных результатах в разделе 5, в этом приложении приведены полные детали реализации сред SkillExecBench, логика генерации задач и траектории эпизодов.</p>
+
+          <h3 id="appendix-b-1">B.1 Проектирование сред</h3>
+          <h4>Среда 1: управление складом</h4>
+          <ul>
+            <li><strong>Представление состояния:</strong> дискретное отображение инвентаря для 500 независимых полок (например, <code>shelf_0</code>–<code>shelf_499</code>), где каждая полка содержит ровно один строковый идентификатор товара или значение <code>null</code>.</li>
+            <li><strong>Пространство действий:</strong>
+              <ul>
+                <li><code>Store &lt;item_id&gt; &lt;empty_shelf_id&gt;</code></li>
+                <li><code>Ship &lt;item_id&gt; &lt;shelf_id&gt;</code></li>
+                <li><code>Move &lt;item_id&gt; &lt;old_shelf_id&gt; &lt;new_shelf_id&gt;</code></li>
+                <li><code>Wait</code></li>
+              </ul>
+            </li>
+            <li><strong>Формат наблюдений:</strong> текстовые оповещения, вызываемые системными событиями, включая: <em>Shipment arrived containing [item]</em>, <em>Customer ordered [item]</em> и <em>Maintenance required on [shelf]</em>.</li>
+            <li><strong>Правила переходов:</strong> если агент вызывает <code>Store</code>, среда проверяет, пуста ли полка, и только после этого размещает товар. Если вызывается <code>Ship</code>, товар уничтожается. Некорректные действия (например, размещение товара на занятой полке) возвращают локальное наблюдение об ошибке и отклоняют переход состояния.</li>
+            <li><strong>Критерий успеха:</strong> отношение успешно выполненных корректных действий, соответствующих детерминированной эталонной симуляции, к общему числу событий, требующих действия (Score = Successful Actions / Total Actionable Events).</li>
+          </ul>
+
+          <h4>Среда 2: программный репозиторий</h4>
+          <ul>
+            <li><strong>Представление состояния:</strong> имитируемый Git-репозиторий, отслеживающий истории веток, содержимое файлов, активные запросы на включение изменений (Pull Requests, PRs) и состояния тестов непрерывной интеграции (Continuous Integration, CI).</li>
+            <li><strong>Пространство действий:</strong> <code>Commit(branch, file)</code>, <code>CreatePR(branch)</code>, <code>Merge(pr_id)</code>, <code>FixCI(branch)</code>, <code>Wait</code>.</li>
+            <li><strong>Формат наблюдений:</strong> уведомления вебхуков CI/CD (например, <em>CI Pipeline Failed for PR #3</em>), комментарии к проверке кода и назначения задач.</li>
+            <li><strong>Правила переходов:</strong> отправка коммита запускает фоновый переход оценки CI. Успешное слияние PR переводит состояние основной ветки и удаляет ветку функции.</li>
+            <li><strong>Критерий успеха:</strong> доля корректно решённых запросов на функции, включённых в основную ветку без нарушения проверок CI.</li>
+          </ul>
+
+          <h3 id="appendix-b-2">B.2 Генерация задач</h3>
+          <p>Задачи генерируются процедурно с использованием детерминированного генератора случайных чисел. За счёт инициализации генератора одним и тем же начальным значением все оцениваемые базовые среды выполнения получают в точности одну и ту же последовательность событий, что обеспечивает справедливое сравнение. Длина горизонта задаёт число последовательных событий, которые должен обработать агент.</p>
+
+          <figure id="alg2" class="algorithm">
+            <figcaption><strong>Алгоритм 2.</strong> Псевдокод генерации складских задач</figcaption>
+            <pre><code>seed ← 42
+rng ← Random(seed)
+gt_shelves ← { shelf_0: Null, ..., shelf_499: Null }
+events ← []
+for i = 1 to Horizon
+    available ← FindEmptyShelves(gt_shelves)
+    occupied ← FindOccupiedShelves(gt_shelves)
+    possible_events ← [Receive]
+    if occupied is not empty
+        possible_events.append(Order, Maintenance)
+    end if
+    event_type ← rng.choice(possible_events)
+    events.append(ConstructObservation(event_type))
+    UpdateGroundTruth(gt_shelves, event_type)
+end for
+return events</code></pre>
+          </figure>
+
+          <h3 id="appendix-b-3">B.3 Траектория примерного эпизода</h3>
+          <p>Чтобы проиллюстрировать поток выполнения, ниже приведена конкретная одноходовая траектория для среды выполнения <strong>SKILL.state</strong>, работающей в складской среде.</p>
+
+          <h4>1. Полученное наблюдение (среда → LLM)</h4>
+          <pre class="code-block"><code>Latest Observation:
+Customer ordered item_12.</code></pre>
+          <p class="caption">Перевод: Последнее наблюдение: клиент заказал item_12.</p>
+
+          <h4>2. Обработка LLM (внутренний процесс LLM)</h4>
+          <pre class="code-block"><code>Reasoning:
+The customer ordered item_12. I need to ship it.
+I will check my Skill Execution State to locate it.
+Looking at the state schema, item_12 is located on shelf_42.
+I must generate a Ship action and update my state to remove it from shelf_42.</code></pre>
+          <p class="caption">Перевод: клиент заказал item_12; его нужно отправить. Для определения местоположения следует проверить состояние выполнения навыка. Согласно схеме состояния item_12 находится на shelf_42. Нужно сгенерировать действие Ship и обновить состояние, удалив его с shelf_42.</p>
+
+          <h4>3. Обновление состояния и генерация действия (LLM → среда выполнения)</h4>
+          <pre class="code-block"><code>{
+  "state_patch": {
+    "inventory": {
+      "shelf_42": null
+    }
+  },
+  "action": "Ship item_12 shelf_42"
+}</code></pre>
+          <p class="caption">Перевод человекочитаемых полей: обновление состояния; действие «отправить item_12 с shelf_42». Имена ключей, значения и формат JSON сохранены буквально.</p>
+
+          <h4>4. Следующее наблюдение (среда → LLM)</h4>
+          <pre class="code-block"><code>Latest Observation:&#32;
+Success: Shipped item_12 from shelf_42.&#32;</code></pre>
+          <p class="caption">Перевод: успех: item_12 отправлен с shelf_42.</p>
+        </section>
+
+        <section id="appendix-c" class="appendix">
+          <h2>Приложение C. Конструирование шума (эксперимент 2)</h2>
+          <p>В эксперименте 2 мы оцениваем устойчивость сред выполнения к плотному нерелевантному контекстному шуму. Реальные системы редко предоставляют чистые, идеально изолированные пространства наблюдений; агентам постоянно приходится фильтровать фоновую телеметрию, журналы датчиков и системный шум, чтобы выполнять свои инструкции.</p>
+          <p>Чтобы изолировать проблему <em>Attention Drag</em>, эксперименты в этой статье сосредоточены исключительно на <strong>условии 1: нерелевантный контекст</strong>.</p>
+
+          <h3 id="appendix-c-1">C.1 Свойства шума</h3>
+          <p>Для оценок по условию 1 в обеих средах внедряемые строки шума определяются тремя строгими свойствами:</p>
+          <ol>
+            <li><strong>Генерируются случайно:</strong> такие значения, как проценты заряда батареи, температуры, идентификаторы серверов и загрузка CPU, равномерно выбираются случайно во время каждого шага выполнения.</li>
+            <li><strong>Строго нерелевантны:</strong> смысл шума совершенно не влияет на основную задачу агента (например, выполнение складских заказов или исправление CI-конвейеров).</li>
+            <li><strong>Не изменяют состояние:</strong> шумовые события никогда фактически не меняют истинное состояние мира. Это исключительно наблюдаемые отвлекающие факторы, добавляемые к ответу среды под заголовком <code>--- BACKGROUND TELEMETRY ---</code>.</li>
+          </ol>
+
+          <h3 id="appendix-c-2">C.2 Отвлекающие факторы среды 1 (склад)</h3>
+          <p>Чтобы смоделировать реалистичный зашумлённый склад, генератор случайно выбирает следующие категории для добавления нерелевантных строк в пространство наблюдений агента.</p>
+
+          <h4>1. Журналы телеметрии роботов</h4>
+          <p>Моделируют непрерывные сигналы от автоматизированных складских роботов, перемещающихся по полу.</p>
+          <pre class="code-block"><code>Battery: 85%, Temperature: 45C, CPU Load: 72%,
+Speed: 1.2 m/s, Nav Confidence: 95.4%</code></pre>
+
+          <h4>2. Журналы датчиков окружающей среды</h4>
+          <p>Моделируют пассивные показания HVAC и датчиков окружающей среды.</p>
+          <pre class="code-block"><code>[Sensor] Humidity: 45%, Temp: 22.3C, Light: 310 lux, CO2: 450 ppm</code></pre>
+
+          <h4>3. Журналы OCR / зрения камеры</h4>
+          <p>Моделируют фоновые события от камер безопасности или систем компьютерного зрения, обнаруживающих объекты.</p>
+          <pre class="code-block"><code>[Camera OCR] Forklift parked.
+[Camera OCR] Worker entered Zone A.
+[Camera OCR] Safety Vest Detected.</code></pre>
+
+          <h3 id="appendix-c-3">C.3 Отвлекающие факторы среды 2 (программный репозиторий)</h3>
+          <p>Чтобы смоделировать зашумлённую программную инженерную среду масштаба предприятия, генератор непрерывно добавляет в терминальные наблюдения агента нерелевантную телеметрию syslog облачной инфраструктуры.</p>
+
+          <h4>Телеметрия syslog</h4>
+          <p>Моделирует пассивные проверки работоспособности и предупреждения о загрузке CPU от отключённых удалённых серверов, работающих в фоновом режиме.</p>
+          <pre class="code-block"><code>[Syslog] Server-42 CPU load: 88%, RAM usage: 71%
+[Syslog] Server-17 CPU load: 12%, RAM usage: 45%
+[Syslog] Server-91 CPU load: 99%, RAM usage: 89%</code></pre>
+
+          <h4>Пример испорченного наблюдения (программный репозиторий, 3 события)</h4>
+          <pre class="code-block"><code>Latest Observation:
+CI Pipeline Failed for PR #3. Linter error on line 42.
+
+--- BACKGROUND TELEMETRY ---
+[Syslog] Server-42 CPU load: 88%, RAM usage: 71%
+[Syslog] Server-17 CPU load: 12%, RAM usage: 45%
+[Syslog] Server-91 CPU load: 99%, RAM usage: 89%</code></pre>
+        </section>
+
+        <section id="sec-2">
+          <h2>2 Связанные работы</h2>
+
+          <section id="sec-2-1">
+            <h3>2.1 Процедурные навыки для LLM-агентов</h3>
+            <p>Существующие исследования повторно используемых процедурных навыков в основном посвящены обнаружению навыков, их представлению, композиции и моделированию угроз безопасности <span class="citation">(<a href="#bib.bib12">Badhe et al., 2026</a>; <a href="#bib.bib13">Badhe and Tiwari, 2026</a>)</span>. Наша работа сосредоточена на в значительной степени неисследованных механизмах выполнения навыка после того, как навык выбран.</p>
+          </section>
+
+          <section id="sec-2-2">
+            <h3>2.2 Архитектуры памяти для агентов с длинным горизонтом выполнения</h3>
+            <p>Архитектуры агентов с длинным горизонтом выполнения обычно сохраняют семантику диалога посредством эпизодического извлечения <span class="citation">(<a href="#bib.bib7">Park et al., 2023</a>)</span> или постоянного хранения <span class="citation">(<a href="#bib.bib15">Chhikara et al., 2025</a>; <a href="#bib.bib16">Zhong et al., 2024</a>)</span>. Эти методы оставляют состояние выполнения неявно распределённым по накопленным журналам. SKILL.state изолирует выполнение в явном изменяемом состоянии среды выполнения (runtime), устраняя необходимость многократно восстанавливать модели мира из текстовой истории. Фреймворки, такие как LangGraph, используют вспомогательное структурированное состояние для оркестрации рабочих процессов между узлами агентов. Однако эти системы по-прежнему используют транскрипты диалогов как основной субстрат рассуждений. SKILL.state заменяет этот субстрат, отбрасывая промежуточные следы рассуждений сразу после создания проверенных переходов состояния.</p>
+          </section>
+
+          <section id="sec-2-3">
+            <h3>2.3 Отслеживание состояния диалога</h3>
+            <p>Отслеживание состояния диалога (DST) поддерживает значения слотов пользователя на протяжении ходов диалога в диалогах, ориентированных на выполнение задач <span class="citation">(<a href="#bib.bib17">Williams et al., 2013</a>; <a href="#bib.bib18">Henderson et al., 2014</a>; <a href="#bib.bib19">Rastogi et al., 2020</a>; <a href="#bib.bib20">Wu et al., 2019</a>; <a href="#bib.bib21">Heck et al., 2020</a>; <a href="#bib.bib22">Hosseini-Asl et al., 2020</a>)</span>. Хотя и DST, и SKILL.state поддерживают структурированные представления, они фундаментально различаются по механике выполнения: DST отслеживает вспомогательное состояние наряду с полными транскриптами диалогов в квазистатичных диалогах, тогда как SKILL.state рассматривает структурированное состояние как достаточную статистику, отбрасывая историю диалога для выполнения автономных навыков в динамических средах с ограниченным объёмом промпта.</p>
+          </section>
+
+          <section id="sec-2-4">
+            <h3>2.4 Управление контекстом и рассуждение в длинном контексте</h3>
+            <p>Языковые модели демонстрируют ухудшенное извлечение информации из длинных контекстов <span class="citation">(<a href="#bib.bib11">Liu et al., 2024</a>; <a href="#bib.bib27">Zhang et al., 2024</a>)</span>, что мотивирует потоковое внимание <span class="citation">(<a href="#bib.bib10">Xiao et al., 2024b</a>)</span> и методы сжатия промпта <span class="citation">(<a href="#bib.bib23">Jiang et al., 2023</a>; <a href="#bib.bib24">Li et al., 2023</a>)</span>. Вместо попыток обрабатывать или сжимать расширенные истории диалога SKILL.state полностью предотвращает накопление истории, поддерживая каноническое состояние выполнения, необходимое для следующего вычисления.</p>
+          </section>
+        </section>
+
+        <section id="sec-6">
+          <h2>6 Заключение</h2>
+          <p>Мы представили <strong>SKILL.state</strong> — архитектуру среды выполнения, которая заменяет историю диалога с добавлением только в конец явным структурированным состоянием выполнения. Отбрасывая промежуточные трассы рассуждений после каждого проверенного перехода, <strong>SKILL.state</strong> поддерживает ограниченный объём промпта \(\mathcal{O}(1)\) и масштабируется линейно, \(\mathcal{O}(T)\), по совокупному числу токенов. В контролируемых диагностических задачах и общедоступных интерактивных бенчмарках явное состояние выполнения стабильно повышает точность выполнения задач, одновременно существенно уменьшая рост промпта и потребление токенов.</p>
+        </section>
+
+        <section id="sec-7">
+          <h2>7 Ограничения</h2>
+          <p><strong>SKILL.state</strong> предполагает, что состояние выполнения можно сделать <em>достаточной статистикой</em> для будущего выполнения: всё в прошлом, что имеет отношение к будущим действиям, может быть спроецировано в структурированное состояние сразу после того, как становится известным. Когда это выполняется, отбрасывание промежуточных рассуждений и истории диалога не приводит к потере информации. Однако это предположение нарушается в трёх различных случаях: (1) когда никакая фиксированная схема не известна заранее и релевантная структура состояния должна динамически обнаруживаться во время выполнения; (2) когда корректное обновление состояния зависит от более раннего наблюдения, релевантность которого не была распознана при первом наблюдении и поэтому никогда не была зафиксирована в состоянии; и (3) когда цель задачи определена самой исторической траекторией (например, аудитом, трассировкой происхождения при отладке или объяснением прошлых действий), и тогда история взаимодействия является целевым выходом вместо операционных накладных расходов.</p>
+          <p>Наша текущая реализация сосредоточена на процедурном выполнении одним агентом. Хотя абстракция явного состояния естественным образом распространяется на многоагентные системы — где общее состояние выполнения выступает центральной основой координации вместо обмена квадратичными стенограммами диалогов, — многоагентные среды вводят конкурентные записи, требующие детерминированной семантики разрешения конфликтов в операторе слияния \(\oplus\), которую наша одноагентная постановка не задействует.</p>
+          <p>Наконец, <strong>SKILL.state</strong> полагается на языковую модель, которая предлагает допустимые структурированные патчи состояния. Поскольку владение схемой и валидация находятся в детерминированной среде выполнения вместо модели, некорректно сформированные выходы не могут повредить постоянное состояние \(\Sigma_t\); недопустимый патч запускает цикл отката и повторной попытки. Для меньших моделей с открытыми весами интеграция декодирования с ограничениями грамматики может устранить синтаксические ошибки форматирования, позволяя модели полностью сосредоточиться на семантических переходах состояния.</p>
+        </section>
+
+        <section id="references">
+          <h2>Литература</h2>
+          <ol class="references">
+            <li id="bib.bib12"><strong>Badhe et al. (2026).</strong> S. Badhe, D. Shah, P. Tiwari, and N. Kathrotia. <em>Систематический обзор навыков агентов: жизненный цикл, таксономия и безопасность.</em> Taxonomy, and Security (July 31, 2026). <a class="backref" href="#sec-1">↩ §1</a> <a class="backref" href="#sec-2-1">↩ §2.1</a></li>
+            <li id="bib.bib13"><strong>Badhe and Tiwari (2026).</strong> S. Badhe and P. Tiwari. <em>Безопасность навыков агентов: модели угроз, атаки, защиты и оценивание.</em> Preprint, arXiv:2607.13987. <a href="https://arxiv.org/abs/2607.13987" rel="noreferrer">arXiv</a>. <a class="backref" href="#sec-2-1">↩ §2.1</a></li>
+            <li id="bib.bib15"><strong>Chhikara et al. (2025).</strong> P. Chhikara, D. Khant, S. Aryan, T. Singh, and D. Yadav. <em>Mem0: создание готовых к производственному использованию ИИ-агентов с масштабируемой долговременной памятью.</em> arXiv preprint arXiv:2504.19413. <a class="backref" href="#sec-2-2">↩ §2.2</a></li>
+            <li id="bib.bib21"><strong>Heck et al. (2020).</strong> M. Heck, C. van Niekerk, N. Lubis, C. Geishauser, H. Lin, M. Moresi, and M. Gašić. <em>TripPy: стратегия тройного копирования для независимого от значения отслеживания состояния нейронного диалога.</em> In Proceedings of the 21th Annual Meeting of the Special Interest Group on Discourse and Dialogue, pp. 35–44. <a class="backref" href="#sec-2-3">↩ §2.3</a></li>
+            <li id="bib.bib18"><strong>Henderson et al. (2014).</strong> M. Henderson, B. Thomson, and J. D. Williams. <em>Второй конкурс по отслеживанию состояния диалога.</em> In Proceedings of the 15th Annual Meeting of the Special Interest Group on Discourse and Dialogue (SIGDIAL), pp. 263–272. <a class="backref" href="#sec-2-3">↩ §2.3</a></li>
+            <li id="bib.bib22"><strong>Hosseini-Asl et al. (2020).</strong> E. Hosseini-Asl, B. McCann, C. Wu, S. Yavuz, and R. Socher. <em>Простая языковая модель для диалога, ориентированного на задачу.</em> Advances in Neural Information Processing Systems 33, pp. 20179–20191. <a class="backref" href="#sec-2-3">↩ §2.3</a></li>
+            <li id="bib.bib23"><strong>Jiang et al. (2023).</strong> H. Jiang, Q. Wu, C. Lin, Y. Yang, and L. Qiu. <em>LLMLingua: сжатие промптов для ускоренного вывода больших языковых моделей.</em> In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP), pp. 13358–13376. <a class="backref" href="#sec-2-4">↩ §2.4</a> <a class="backref" href="#sec-5-1">↩ §5.1</a></li>
+            <li id="bib.bib24"><strong>Li et al. (2023).</strong> Y. Li, B. Dong, F. Zhang, D. Wang, Y. Xu, X. Chen, and X. Ren. <em>Сжатие контекста для повышения эффективности вывода больших языковых моделей.</em> In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP), pp. 6342–6353. <a class="backref" href="#sec-2-4">↩ §2.4</a></li>
+            <li id="bib.bib11"><strong>Liu et al. (2024).</strong> N. F. Liu, K. Lin, J. Hewitt, A. Paranjape, M. Bevilacqua, F. Petroni, and P. Liang. <em>Потерянные в середине: как языковые модели используют длинные контексты.</em> Transactions of the Association for Computational Linguistics, 12, pp. 157–173. Внешние ссылки: <a href="https://aclanthology.org/2024.tacl-1.9/" rel="noreferrer">ACL Anthology</a>, <a href="https://doi.org/10.1162/tacl_a_00638" rel="noreferrer">DOI</a>. <a class="backref" href="#sec-1">↩ §1</a> <a class="backref" href="#sec-2-4">↩ §2.4</a></li>
+            <li id="bib.bib6"><strong>Mialon et al. (2023).</strong> G. Mialon, R. Dessi, M. Lomeli, C. Nalmpantis, R. Pasunuru, R. Raileanu, B. Roziere, T. Schick, J. Dwivedi-Yu, A. Celikyilmaz, E. Grave, Y. LeCun, and T. Scialom. <em>Расширенные языковые модели: обзор.</em> Transactions on Machine Learning Research. Note: Survey Certification. ISSN 2835-8856. <a href="https://openreview.net/forum?id=jh7wH2AzKK" rel="noreferrer">OpenReview</a>. <a class="backref" href="#sec-1">↩ §1</a></li>
+            <li id="bib.bib2"><strong>Packer et al. (2023).</strong> C. Packer, V. Fang, S. Patil, K. Lin, S. Wooders, and J. Gonzalez. <em>MemGPT: к LLM как к операционным системам.</em> <a class="backref" href="#sec-1">↩ §1</a></li>
+            <li id="bib.bib7"><strong>Park et al. (2023).</strong> J. S. Park, J. C. O’Brien, C. J. Cai, M. R. Morris, P. Liang, and M. S. Bernstein. <em>Генеративные агенты: интерактивные симулякры человеческого поведения.</em> In Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology (UIST). <a class="backref" href="#sec-2-2">↩ §2.2</a></li>
+            <li id="bib.bib4"><strong>Qin et al. (2024).</strong> Y. Qin, S. Liang, Y. Ye, K. Zhu, L. Yan, Y. Lu, Y. Lin, X. Cong, X. Tang, B. Qian, et al. <em>ToolLLM: содействие освоению большими языковыми моделями 16000+ реальных API.</em> In International Conference on Learning Representations (ICLR). <a class="backref" href="#sec-1">↩ §1</a></li>
+            <li id="bib.bib19"><strong>Rastogi et al. (2020).</strong> A. Rastogi, X. Zang, S. Sunkara, R. Gupta, and P. Khaitan. <em>К масштабируемым многодоменным разговорным агентам: набор данных для диалога, управляемого схемой.</em> In Proceedings of the AAAI Conference on Artificial Intelligence, vol. 34, pp. 8689–8696. <a class="backref" href="#sec-2-3">↩ §2.3</a></li>
+            <li id="bib.bib3"><strong>Schick et al. (2023).</strong> T. Schick, J. Dwivedi-Yu, R. Dessì, R. Raileanu, M. Lomeli, L. Zettlemoyer, N. Cancedda, and T. Scialom. <em>Toolformer: языковые модели могут научиться самостоятельно пользоваться инструментами.</em> In Advances in Neural Information Processing Systems (NeurIPS). <a class="backref" href="#sec-1">↩ §1</a></li>
+            <li id="bib.bib9"><strong>Wang et al. (2023).</strong> W. Wang, L. Dong, H. Cheng, X. Liu, X. Yan, J. Gao, and F. Wei. <em>Дополнение языковых моделей долговременной памятью.</em> Advances in Neural Information Processing Systems (NeurIPS). <a class="backref" href="#sec-1">↩ §1</a></li>
+            <li id="bib.bib17"><strong>Williams et al. (2013).</strong> J. Williams, A. Raux, D. Ramachandran, and A. Black. <em>Конкурс по отслеживанию состояния диалога.</em> In Proceedings of the SIGDIAL 2013 Conference, pp. 404–413. <a class="backref" href="#sec-2-3">↩ §2.3</a></li>
+            <li id="bib.bib20"><strong>Wu et al. (2019).</strong> C. Wu, A. Madotto, E. Hosseini-Asl, C. Xiong, R. Socher, and P. Fung. <em>Переносимый генератор состояния для ориентированных на задачи диалоговых систем.</em> In Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, pp. 808–819. <a class="backref" href="#sec-2-3">↩ §2.3</a></li>
+            <li id="bib.bib5"><strong>Wu et al. (2023).</strong> Q. Wu, G. Bansal, J. Zhang, Y. Wu, B. Li, E. Zhu, L. Jiang, X. Zhang, S. Zhang, J. Liu, et al. <em>AutoGen: создание приложений LLM нового поколения посредством многоагентного диалога.</em> arXiv preprint arXiv:2308.08155. <a class="backref" href="#sec-1">↩ §1</a></li>
+            <li id="bib.bib14"><strong>Xiao et al. (2024a).</strong> G. Xiao, Y. Tian, B. Chen, S. Han, and M. Lewis. <em>Эффективные потоковые языковые модели со стоками внимания.</em> In International Conference on Learning Representations (ICLR). <a class="backref" href="#sec-1">↩ §1</a></li>
+            <li id="bib.bib10"><strong>Xiao et al. (2024b).</strong> G. Xiao, Y. Tian, B. Chen, S. Han, and M. Lewis. <em>Эффективные потоковые языковые модели со стоками внимания.</em> In International Conference on Learning Representations, vol. 2024, pp. 21875–21895. <a class="backref" href="#sec-2-4">↩ §2.4</a></li>
+            <li id="bib.bib25"><strong>Yang et al. (2023).</strong> J. Yang, A. Prabhakar, K. Narasimhan, and S. Yao. <em>InterCode: стандартизация и бенчмаркинг интерактивного программирования с обратной связью от выполнения.</em> In Advances in Neural Information Processing Systems (NeurIPS). <a class="backref" href="#sec-1">↩ §1</a> <a class="backref" href="#sec-4-2">↩ §4.2</a></li>
+            <li id="bib.bib26"><strong>Yao et al. (2024).</strong> S. Yao, N. Shinn, J. Zhao, Q. Wu, and K. Narasimhan. <em>\(\tau\)-Bench: бенчмарк взаимодействия инструмента, агента и пользователя в реальных предметных областях.</em> arXiv preprint arXiv:2406.12045. <a class="backref" href="#sec-1">↩ §1</a> <a class="backref" href="#sec-4-2">↩ §4.2</a></li>
+            <li id="bib.bib1"><strong>Yao et al. (2022).</strong> S. Yao, J. Zhao, D. Yu, N. Du, I. Shafran, K. Narasimhan, and Y. Cao. <em>React: синергия рассуждения и действия в языковых моделях.</em> arXiv preprint arXiv:2210.03629. <a class="backref" href="#sec-1">↩ §1</a> <a class="backref" href="#sec-5-1">↩ §5.1</a></li>
+            <li id="bib.bib27"><strong>Zhang et al. (2024).</strong> X. Zhang, Y. Chen, S. Hu, Z. Xu, J. Chen, M. Hao, X. Han, Z. Thai, S. Wang, Z. Liu, and M. Sun. <em>\(\infty\)Bench: расширение оценки длинного контекста за пределы 100K токенов.</em> In Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), L. Ku, A. Martins, and V. Srikumar (Eds.), Bangkok, Thailand, pp. 15262–15277. Внешние ссылки: <a href="https://aclanthology.org/2024.acl-long.814/" rel="noreferrer">ACL Anthology</a>, <a href="https://doi.org/10.18653/v1/2024.acl-long.814" rel="noreferrer">DOI</a>. <a class="backref" href="#sec-2-4">↩ §2.4</a></li>
+            <li id="bib.bib8"><strong>Zhong et al. (2023).</strong> W. Zhong, L. Guo, Q. Gao, H. Y. Wang, and Y. Lin. <em>MemoryBank: расширение больших языковых моделей долговременной памятью.</em> arXiv preprint arXiv:2305.10250. <a class="backref" href="#sec-1">↩ §1</a></li>
+            <li id="bib.bib16"><strong>Zhong et al. (2024).</strong> W. Zhong, L. Guo, Q. Gao, H. Ye, and Y. Wang. <em>Memorybank: расширение больших языковых моделей долговременной памятью.</em> In Proceedings of the AAAI Conference on Artificial Intelligence, vol. 38, pp. 19724–19731. <a class="backref" href="#sec-2-2">↩ §2.2</a></li>
+          </ol>
+        </section>
+
+        <section id="sec-4">
+          <h2>4 Бенчмарки оценки</h2>
+
+          <section id="sec-4-1">
+            <h3>4.1 SkillExecBench (контролируемый диагностический тестовый стенд)</h3>
+            <p>SkillExecBench отделяет механику выполнения от открытого эвристического поиска, предоставляя последовательные процедурные задачи с детерминированными эталонными переходами состояния мира:</p>
+            <ul>
+              <li><strong>Среда 1 (Warehouse Management):</strong> дискретная предметная область физического инвентаря, отслеживающая 500 независимых полок. Действия включают <code>Store</code>, <code>Ship</code>, <code>Move</code> и <code>Wait</code>. Эта среда проверяет способность модели поддерживать независимые, непересекающиеся переменные состояния на длительных горизонтах, когда ранние наблюдения выходят за пределы контекстного окна.</li>
+              <li><strong>Среда 2 (Software Repository):</strong> глубоко вложенный реляционный граф ветвей Git, коммитов, Pull Requests и статусов CI-тестов. Действия включают <code>CherryPick</code>, <code>Merge</code>, <code>RunTests</code>, <code>CreateRelease</code> и <code>Rollback</code>. Среда характеризуется плотными зависимостями, при которых одно действие (например, слияние PR) принципиально изменяет состояние целевой ветви и зависимых PR, проверяя сложное структурное рассуждение по запутанному графу.</li>
+            </ul>
+          </section>
+
+          <section id="sec-4-2">
+            <h3>4.2 Публичные интерактивные бенчмарки</h3>
+            <p>Чтобы оценить SKILL.state на реальных недетерминированных задачах, требующих сложного поиска, генерации и использования инструментов, мы проводим оценку на двух публичных бенчмарках:</p>
+            <ul>
+              <li><strong>InterCode CTF (<a href="#bib.bib25">Yang et al., 2023</a>):</strong> набор из 100 задач Capture-The-Flag в Linux bash, охватывающих обратную разработку, компьютерную криминалистику, криптографию и эксплуатацию бинарных файлов. Агенты выполняют команды bash в контейнерах Docker и итеративно проверяют гипотезы, чтобы обнаружить скрытые флаги.</li>
+              <li><strong>Sierra \(\tau\)-Bench (<a href="#bib.bib26">Yao et al., 2024</a>):</strong> бенчмарк взаимодействия «инструмент—агент—пользователь» в корпоративном обслуживании клиентов (домены Retail и Airline). Агенты взаимодействуют с симулированными пользователями, запрашивают реляционные базы данных SQLite посредством вызовов инструментов и выполняют транзакционные действия (например, перебронирование рейсов, возвраты) с учётом ограничений бизнес-политик.</li>
+            </ul>
+          </section>
+
+          <section id="sec-4-3">
+            <h3>4.3 Метрики оценки</h3>
+            <p>Мы оцениваем среды выполнения по трём измерениям:</p>
+            <ul>
+              <li><strong>Точность выполнения задачи / коэффициент успешности:</strong> в SkillExecBench точность непрерывно измеряется как отношение числа допустимых корректных действий, соответствующих детерминированной эталонной симуляции (\(\text{Score}=\frac{\text{Successful Actions}}{\text{Total Actionable Events}}\)). В InterCode CTF успешность является бинарным показателем pass@1 (точное совпадение с бинарно проверенным флагом). В \(\tau\)-Bench успешность оценивается официальным программным оценивателем, который проверяет, что итоговое состояние базы данных удовлетворяет намерению пользователя без нарушений политик.</li>
+              <li><strong>Средний размер промпта:</strong> средняя длина строки в символах для одного вызова LLM.</li>
+              <li><strong>Общая стоимость токенов:</strong> совокупный расход токенов на протяжении всего горизонта выполнения.</li>
+            </ul>
+
+            <figure id="S4.T1" class="table-wrap wide-table">
+              <table id="S4.T1.2.1">
+                <caption><strong>Таблица 1:</strong> Масштабирование Warehouse Management с длинным горизонтом выполнения с использованием Gemini-3-Flash. Базовые среды выполнения страдают от накопления контекста \(\mathcal{O}(T^{2})\), тогда как SKILL.state поддерживает ограниченный объём промпта \(\mathcal{O}(1)\) (среднее \(\pm\) SD на 5 сидах).</caption>
+                <thead>
+                  <tr><th scope="col">Горизонт (\(T\))</th><th scope="col">Среда выполнения</th><th scope="col">Оценка (точность)</th><th scope="col">Средний промпт (символы)</th><th scope="col">Всего токенов</th></tr>
+                </thead>
+                <tbody>
+                  <tr><th scope="rowgroup" rowspan="4">10</th><td>Prompt (ReAct)</td><td>0.90 ± 0.02</td><td>3,249 ± 94</td><td>9,438 ± 371</td></tr>
+                  <tr><td>Memory (Summary)</td><td>1.00 ± 0.00</td><td>3,300 ± 123</td><td>9,972 ± 204</td></tr>
+                  <tr><td>Stateful (LangGraph)</td><td>1.00 ± 0.00</td><td>3,430 ± 42</td><td>10,337 ± 299</td></tr>
+                  <tr><td><strong>SKILL.state</strong></td><td><strong>1.00 ± 0.00</strong></td><td><strong>1,775 ± 74</strong></td><td><strong>5,870 ± 131</strong></td></tr>
+                  <tr class="group-start"><th scope="rowgroup" rowspan="4">25</th><td>Prompt (ReAct)</td><td>0.92 ± 0.02</td><td>6,052 ± 192</td><td>42,689 ± 2,238</td></tr>
+                  <tr><td>Memory (Summary)</td><td>0.99 ± 0.00</td><td>6,357 ± 203</td><td>43,067 ± 1,948</td></tr>
+                  <tr><td>Stateful (LangGraph)</td><td>1.00 ± 0.00</td><td>5,858 ± 301</td><td>41,238 ± 3,196</td></tr>
+                  <tr><td><strong>SKILL.state</strong></td><td><strong>1.00 ± 0.00</strong></td><td><strong>1,736 ± 49</strong></td><td><strong>14,714 ± 564</strong></td></tr>
+                  <tr class="group-start"><th scope="rowgroup" rowspan="4">50</th><td>Prompt (ReAct)</td><td>0.88 ± 0.04</td><td>11,931 ± 346</td><td>171,658 ± 6,978</td></tr>
+                  <tr><td>Memory (Summary)</td><td>0.93 ± 0.03</td><td>7,582 ± 283</td><td>131,455 ± 6,841</td></tr>
+                  <tr><td>Stateful (LangGraph)</td><td>0.94 ± 0.00</td><td>11,594 ± 438</td><td>170,992 ± 7,918</td></tr>
+                  <tr><td><strong>SKILL.state</strong></td><td><strong>0.96 ± 0.01</strong></td><td><strong>1,773 ± 53</strong></td><td><strong>30,151 ± 1,231</strong></td></tr>
+                  <tr class="group-start"><th scope="rowgroup" rowspan="4">100</th><td>Prompt (ReAct)</td><td>0.84 ± 0.07</td><td>36,362 ± 1,304</td><td>1,245,413 ± 53,241</td></tr>
+                  <tr><td>Memory (Summary)</td><td>0.87 ± 0.05</td><td>29,607 ± 978</td><td>1,082,154 ± 83,212</td></tr>
+                  <tr><td>Stateful (LangGraph)</td><td>0.91 ± 0.02</td><td>31,354 ± 831</td><td>1,062,387 ± 53,839</td></tr>
+                  <tr><td><strong>SKILL.state</strong></td><td><strong>0.94 ± 0.01</strong></td><td><strong>1,905 ± 93</strong></td><td><strong>65,408 ± 5,431</strong></td></tr>
+                  <tr class="group-start"><th scope="rowgroup" rowspan="4">200</th><td>Prompt (ReAct)</td><td>0.74 ± 0.14</td><td>48,007 ± 2,092</td><td>2,608,755 ± 102,415</td></tr>
+                  <tr><td>Memory (Summary)</td><td>0.84 ± 0.09</td><td>84,364 ± 3,446</td><td>6,175,509 ± 294,089</td></tr>
+                  <tr><td>Stateful (LangGraph)</td><td>0.88 ± 0.03</td><td>72,305 ± 3,096</td><td>5,041,164 ± 346,925</td></tr>
+                  <tr><td><strong>SKILL.state</strong></td><td><strong>0.94 ± 0.02</strong></td><td><strong>1,811 ± 184</strong></td><td><strong>122,384 ± 4,522</strong></td></tr>
+                </tbody>
+              </table>
+            </figure>
+          </section>
+        </section>
+
+        <section id="sec-5">
+          <h2>5 Эксперименты и результаты</h2>
+
+          <section id="sec-5-1">
+            <h3>5.1 Настройка эксперимента</h3>
+            <p>Мы оцениваем SKILL.state в сравнении с двумя семействами базовых методов (точные шаблоны промптов см. в <a href="#appendix-a">Приложении A. Промпты среды выполнения</a>):</p>
+            <p><strong>Основные парадигмы среды выполнения:</strong></p>
+            <ol>
+              <li><strong>Prompt (ReAct-style):</strong> добавляет каждое наблюдение, промежуточную трассу рассуждений и действие в постоянно растущий транскрипт (<a href="#bib.bib1">Yao et al., 2022</a>).</li>
+              <li><strong>Memory (Summarization-style):</strong> поддерживает скользящее окно диалога из 3 шагов наряду с периодически обновляемым резюме прошлых взаимодействий на естественном языке.</li>
+              <li><strong>Stateful (LangGraph-style):</strong> вставляет структурированный блок состояния в контекстное окно вместе с полным скользящим транскриптом диалога.</li>
+            </ol>
+            <p><strong>Контроли с сопоставимым бюджетом и сжатием:</strong></p>
+            <ol>
+              <li><strong>Truncated (Sliding Window):</strong> сохраняет только самые недавние ходы взаимодействия, которые помещаются в фиксированный бюджет токенов.</li>
+              <li><strong>Summary-capped:</strong> строго устанавливает жёсткий предел токенов для резюме на естественном языке.</li>
+              <li><strong>ReAct + LLMLingua (<a href="#bib.bib23">Jiang et al., 2023</a>):</strong> использует сжатие на основе перплексии малой модели с учётом бюджета, чтобы удалить токены из полной истории до целевого бюджета.</li>
+            </ol>
+            <p><strong>Используемые модели:</strong> оценки проводятся на проприетарных моделях и моделях с открытыми весами: Gemini-3-Flash, Gemma-4-31B-it и Qwen-3-8B-it. Декодирование контролируется при <code>temperature</code> 0.0 и <code>top-p</code> 1.0 во всех запусках для обеспечения детерминированной воспроизводимости.</p>
+            <p><strong>Статистическая значимость:</strong> все синтетические эксперименты оцениваются на 5 различных сидах процедурного генератора. Результаты представлены как среднее \(\pm\) выборочное стандартное отклонение. Различия между SKILL.state и базовыми методами на расширенных горизонтах (\(T\geq 50\)) статистически значимы (парный \(t\)-тест, \(p<0.01\)).</p>
+          </section>
+
+          <section id="sec-5-2">
+            <h3>5.2 Эксперимент 1: Масштабирование выполнения с длинным горизонтом выполнения</h3>
+            <p>Мы оцениваем точность среды выполнения и расширение контекста на горизонтах выполнения от \(T=10\) до \(T=200\) шагов.</p>
+            <p><strong>Результаты:</strong> как показано в <a href="#S4.T1">Таблице 1</a>, SKILL.state соответствует точности базовых методов или превосходит её на всех горизонтах, сохраняя постоянный размер промпта. Историко-ориентированные базовые методы страдают от квадратичного накопления токенов \(\mathcal{O}(T^{2})\). При \(T=100\) базовый метод Stateful расходует 1,062,387 токенов, тогда как SKILL.state расходует только 65,408 токенов (сокращение числа токенов в \(16.2\times\) раза). При \(T=200\) SKILL.state сохраняет точность 0.94, расходуя 122k токенов, тогда как базовый метод Memory разрастается до 6.1M токенов. Дополнительные результаты масштабирования для Software Repository и моделей с открытыми весами приведены в <a href="#appendix-d">Приложении D. Дополнительные результаты</a>.</p>
+
+            <figure id="S5.T2" class="table-wrap tight-table">
+              <table id="S5.T2.2">
+                <caption><strong>Таблица 2:</strong> Устойчивость Warehouse к шуму (\(T=50\), Gemini-3-Flash).</caption>
+                <thead><tr><th scope="col">Уровень шума</th><th scope="col">Среда выполнения</th><th scope="col">Оценка</th></tr></thead>
+                <tbody>
+                  <tr><th scope="rowgroup" rowspan="4">5 событий (низкий)</th><td>Prompt</td><td>0.68</td></tr>
+                  <tr><td>Memory</td><td>1.00</td></tr><tr><td>Stateful</td><td>1.00</td></tr><tr><td><strong>SKILL.state</strong></td><td><strong>1.00</strong></td></tr>
+                  <tr class="group-start"><th scope="rowgroup" rowspan="4">20 событий (средний)</th><td>Prompt</td><td>0.61</td></tr>
+                  <tr><td>Memory</td><td>1.00</td></tr><tr><td>Stateful</td><td>0.98</td></tr><tr><td><strong>SKILL.state</strong></td><td><strong>0.97</strong></td></tr>
+                  <tr class="group-start"><th scope="rowgroup" rowspan="4">50 событий (высокий)</th><td>Prompt</td><td>0.53</td></tr>
+                  <tr><td>Memory</td><td>0.96</td></tr><tr><td>Stateful</td><td>0.98</td></tr><tr><td><strong>SKILL.state</strong></td><td><strong>0.98</strong></td></tr>
+                </tbody>
+              </table>
+            </figure>
+          </section>
+
+          <section id="sec-5-3">
+            <h3>5.3 Эксперимент 2: Коррупция контекста (устойчивость к шуму)</h3>
+            <p>Реальные среды выполнения генерируют плотную фоновую телеметрию. Мы фиксируем горизонт на \(T=50\) и вводим отвлекающие события (системную телеметрию, нерелевантные действия в ветвях git и переопределения правил) с частотой 5, 20 и 50 событий за ход (см. <a href="#appendix-c">Приложение C. Построение шума (эксперимент 2)</a> для подробностей калибровки).</p>
+            <p><strong>Результаты:</strong> как показано в <a href="#S5.T2">Таблице 2</a>, стандартная среда выполнения <code>Prompt</code> резко деградирует от 0.68 при низком шуме до 0.53 при высоком шуме. SKILL.state сохраняет устойчивое выполнение задач (\(\geq 0.97\)) при всех уровнях шума, поскольку отвлекающие элементы отфильтровываются во время генерации патча состояния и никогда не попадают в последующие промпты.</p>
+
+            <figure id="S5.T3" class="table-wrap tight-table">
+              <table id="S5.T3.2.1">
+                <caption><strong>Таблица 3:</strong> Восстановление состояния Warehouse (Gemini-3-Flash).</caption>
+                <thead><tr><th scope="col">Сценарий</th><th scope="col">Среда выполнения</th><th scope="col">Успешность</th><th scope="col">Шаги восстановления</th></tr></thead>
+                <tbody>
+                  <tr><th scope="rowgroup" rowspan="2">A: Секретный аудит</th><td>Prompt / Memory / Stateful</td><td>Да</td><td>5–8</td></tr><tr><td><strong>SKILL.state</strong></td><td><strong>Да</strong></td><td><strong>0</strong></td></tr>
+                  <tr class="group-start"><th scope="rowgroup" rowspan="2">B: Секретный штрихкод</th><td>Prompt / Memory / Stateful</td><td>Да</td><td>6–8</td></tr><tr><td><strong>SKILL.state</strong></td><td><strong>Да</strong></td><td><strong>0</strong></td></tr>
+                  <tr class="group-start"><th scope="rowgroup" rowspan="2">C: Секретное перемещение</th><td>Prompt / Memory / Stateful</td><td>Да</td><td>5–8</td></tr><tr><td><strong>SKILL.state</strong></td><td><strong>Да</strong></td><td><strong>0</strong></td></tr>
+                  <tr class="group-start"><th scope="row">D: Отменённый заказ</th><td>Все среды выполнения</td><td>Нет</td><td>N/A</td></tr>
+                </tbody>
+              </table>
+            </figure>
+          </section>
+
+          <section id="sec-5-4">
+            <h3>5.4 Эксперимент 3: Восстановление состояния</h3>
+            <p>Мы проверяем устойчивость среды выполнения к незаметному дрейфу внешней среды, при котором истинное состояние мира изменяется вне цикла действий агента (например, внешний субъект перемещает единицу инвентаря).</p>
+            <p><strong>Результаты:</strong> как показано в <a href="#S5.T3">Таблице 3</a>, базовые методы, основанные на истории, галлюцинируют на протяжении от 5 до 8 последовательных ходов, поскольку устаревшие факты в их истории промпта перевешивают противоречащие им новые наблюдения. SKILL.state требует нулевого числа шагов восстановления: его решения зависят от текущего структурированного состояния, поэтому состояние обновляется немедленно после получения корректирующего оповещения.</p>
+
+            <figure id="S5.T4" class="table-wrap wide-table">
+              <table id="S5.T4.2">
+                <caption><strong>Таблица 4:</strong> Оценка на публичных интерактивных бенчмарках с использованием Gemini-3-Flash. SKILL.state достигает самых высоких показателей успешности задач, одновременно значительно уменьшая размеры промптов и совокупный расход токенов.</caption>
+                <thead>
+                  <tr><th scope="col" rowspan="2">Среда выполнения</th><th scope="colgroup" colspan="3">InterCode CTF (100 задач)</th><th scope="colgroup" colspan="3">Sierra \(\tau\)-Bench (Retail)</th><th scope="colgroup" colspan="3">Sierra \(\tau\)-Bench (Airline)</th></tr>
+                  <tr><th scope="col">Pass@1</th><th scope="col">Промпт</th><th scope="col">Токены</th><th scope="col">Доля прохождения</th><th scope="col">Промпт</th><th scope="col">Токены</th><th scope="col">Доля прохождения</th><th scope="col">Промпт</th><th scope="col">Токены</th></tr>
+                </thead>
+                <tbody>
+                  <tr><th scope="row">Prompt (ReAct)</th><td>43.2%</td><td>1,909</td><td>977k</td><td>48.2%</td><td>2,819</td><td>4.48M</td><td>21.8%</td><td>5,100</td><td>4.85M</td></tr>
+                  <tr><th scope="row">Memory (Summary)</th><td>46.4%</td><td>1,797</td><td>1.03M</td><td>29.9%</td><td>2,737</td><td>4.24M</td><td>23.6%</td><td>4,700</td><td>4.65M</td></tr>
+                  <tr><th scope="row">Stateful (LangGraph)</th><td>41.8%</td><td>1,946</td><td>1.13M</td><td>51.7%</td><td>3,065</td><td>3.92M</td><td>28.1%</td><td>5,400</td><td>5.28M</td></tr>
+                  <tr><th scope="row"><strong>SKILL.state</strong></th><td><strong>54.2%</strong></td><td><strong>813</strong></td><td><strong>387k</strong></td><td><strong>58.3%</strong></td><td><strong>3,325</strong></td><td><strong>3.47M</strong></td><td><strong>32.4%</strong></td><td><strong>2,800</strong></td><td><strong>2.88M</strong></td></tr>
+                </tbody>
+              </table>
+            </figure>
+          </section>
+
+          <section id="sec-5-5">
+            <h3>5.5 Эксперимент 4: Публичные интерактивные бенчмарки</h3>
+            <p>Чтобы проверить обобщаемость на открытых задачах, требующих сложного поиска, генерации и использования инструментов, мы оцениваем SKILL.state на InterCode CTF и Sierra \(\tau\)-Bench.</p>
+            <p><strong>Результаты:</strong> как показано в <a href="#S5.T4">Таблице 4</a>, SKILL.state достигает самых высоких показателей выполнения задач на всех трёх бенчмарках, существенно сокращая совокупный расход токенов. В InterCode CTF поддержание явных гипотез и обнаруженных флагов в \(\Sigma_t\) не позволяет модели повторять неудачные команды, повышая pass@1 до 54.2% (+7.8 пункта по сравнению с самым сильным базовым методом и +12.4 пункта по сравнению с Stateful), одновременно сокращая общее число токенов на 60.4% по сравнению с ReAct и на 65.9% по сравнению с Stateful. В \(\tau\)-Bench Retail SKILL.state лидирует с долей прохождения 58.3% при наименьшей общей стоимости токенов. В \(\tau\)-Bench Airline, где сложные ответы базы данных приводят к тому, что промпты базовых методов достигают пика выше 11,000 токенов/шаг, SKILL.state поддерживает постоянный объём \(\sim\)2,800 токенов/шаг и достигает доли прохождения 32.4%, экономя 40.5% токенов по сравнению с ReAct и 45.4% по сравнению с Stateful.</p>
+          </section>
+
+          <section id="sec-5-6">
+            <h3>5.6 Эксперимент 5: Контроли с сопоставимым бюджетом и статистическое сжатие</h3>
+            <p>Чтобы определить, обусловлены ли приросты производительности SKILL.state всего лишь более короткими промптами или структурированным представлением состояния, мы оцениваем базовые методы с сопоставимым бюджетом на Warehouse (\(T=100\), Gemini-3-Flash), зафиксированные на бюджете токенов SKILL.state (\(\sim\)1,800 символов). Полное масштабирование с несколькими горизонтами по \(T\in\{10,25,50,100\}\) подробно изложено в <a href="#appendix-d-2">Приложении D.2</a>.</p>
+            <p><strong>Результаты:</strong> как показано в <a href="#S5.T5">Таблице 5</a>, все базовые методы с сопоставимым бюджетом и сжатием терпят катастрофический провал. Обрезка скользящего окна падает до 0.18, поскольку критически важные ранние распределения инвентаря вытесняются. LLMLingua падает до 0.22, поскольку фильтрация по статистической энтропии удаляет кажущиеся избыточными идентификаторы слотов, семантически жизненно важные. SKILL.state достигает оценки 0.94, демонстрируя, что поддержание структурированного состояния сохраняет точные реляционные зависимости, которые статистические компрессоры разрушают.</p>
+
+            <figure id="S5.T5" class="table-wrap tight-table">
+              <table id="S5.T5.2.1">
+                <caption><strong>Таблица 5:</strong> Контроли с сопоставимым бюджетом на Warehouse (\(T=100\), Gemini-3-Flash, бюджет \(\sim\)1,800 токенов).</caption>
+                <thead><tr><th scope="col">Среда выполнения / конфигурация</th><th scope="col">Оценка</th><th scope="col">Средний размер промпта</th><th scope="col">Всего токенов</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">Full ReAct (Unbounded)</th><td>0.84</td><td>36,362</td><td>1,245,413</td></tr>
+                  <tr><th scope="row">Truncated (Sliding Window)</th><td>0.18</td><td>1,800</td><td>62,100</td></tr>
+                  <tr><th scope="row">Summary-capped</th><td>0.52</td><td>1,840</td><td>63,400</td></tr>
+                  <tr><th scope="row">ReAct + LLMLingua</th><td>0.22</td><td>1,810</td><td>62,350</td></tr>
+                  <tr><th scope="row"><strong>SKILL.state (Structured)</strong></th><td><strong>0.94</strong></td><td><strong>1,905</strong></td><td><strong>65,408</strong></td></tr>
+                </tbody>
+              </table>
+            </figure>
+          </section>
+
+          <section id="sec-5-7">
+            <h3>5.7 Таксономия ошибок для моделей с открытыми весами</h3>
+            <p>На моделях с открытыми весами (Gemma-4-31B при \(T=100\), оценка 0.42) мы анализируем журналы сбоев и классифицируем ошибки по трём различным режимам:</p>
+            <ol>
+              <li><strong>Преждевременная перезапись / удаление состояния (68%):</strong> модель случайно пропускает существующие ключи при обновлении состояния вместо слияния на месте.</li>
+              <li><strong>Понимание схемы / приведение типов (20%):</strong> несоответствия между ожидаемыми вложенными списками и словарями.</li>
+              <li><strong>Синтаксис JSON / ошибки форматирования (12%):</strong> некорректные разделители JSON или завершающие запятые.</li>
+            </ol>
+            <p>Это распределение ошибок показывает, что деградация малой модели обусловлена соблюдением требований к структурированному выводу; причина связана с форматом, а не со способностью к рассуждению. Это мотивирует использование декодирования с ограничениями в будущих итерациях среды выполнения.</p>
+          </section>
+        </section>
+
+        <section id="sec-3">
+          <h2>3 SKILL.state</h2>
+
+          <p>Современные среды выполнения (runtime) LLM-агентов выполняют процедурные навыки, многократно добавляя следы рассуждений, действия, наблюдения и выводы инструментов в растущую историю диалога. В результате состояние выполнения представлено неявно в естественном языке и должно восстанавливаться языковой моделью при каждом взаимодействии. По мере увеличения горизонтов выполнения и размер промпта, и объём устаревшей информации монотонно растут, что делает выполнение всё более зависимым от интерпретации исторического текста вместо поддержания текущего состояния мира.</p>
+
+          <p>SKILL.state переформулирует выполнение процедурного навыка как явный процесс перехода состояния. Вместо представления выполнения в виде диалога, доступного только для добавления, каждый шаг выполнения определяется следующим образом:</p>
+          <div id="S3.E2" class="equation">\[ A_t = (P,\Sigma_t,O_t), \tag{2} \]</div>
+
+          <p>где \(P\) — неизменяемая процедурная спецификация, \(\Sigma_t\) — структурированное состояние выполнения на шаге \(t\), а \(O_t\) — последнее наблюдение, полученное от среды. Языковая модель никогда не получает предыдущие наблюдения, предыдущие действия или предыдущие следы рассуждений.</p>
+
+          <p>Рисунок <a href="#S3.F1">1</a> иллюстрирует цикл выполнения. На каждом шаге среда выполнения (runtime) строит промпт из \((P,\Sigma_t,O_t)\), вызывает языковую модель, детерминированно проверяет предложенный переход состояния, обновляет состояние выполнения, выполняет выбранное действие и повторяет процесс, используя обновлённое состояние.</p>
+
+          <figure id="S3.F1" class="figure">
+            <img src="figure-1.svg" alt="Оригинальная схема архитектуры SKILL.state с двумя колонками: традиционное выполнение навыка и среда выполнения SKILL.state; внизу сравниваются растущий и ограниченный профили роста контекста." loading="lazy">
+            <figcaption><strong>Рисунок 1:</strong> Обзор архитектуры SKILL.state.</figcaption>
+            <div class="figure-legend">
+              <h4>перевод надписей схемы</h4>
+              <p class="caption">Оригинальная схема сохранена в исходном виде. Надписи представлены векторными контурами, поэтому перевод размещён рядом с оригиналом с сохранением соответствия. <a href="figure-1.svg">Открыть SVG в полном размере</a> · <a href="figure-1-original.pdf">Скачать оригинальный PDF рисунка</a>.</p>
+              <dl>
+                <dt>Traditional Skill Execution</dt><dd>Традиционное выполнение навыка</dd>
+                <dt>Prompt Context \(\mathcal{O}(T)\)</dt><dd>Контекст промпта \(\mathcal{O}(T)\)</dd>
+                <dt>Procedural Instructions</dt><dd>Процедурные инструкции</dd>
+                <dt>Conversation History</dt><dd>История диалога</dd>
+                <dt>Previous Observations</dt><dd>Предыдущие наблюдения</dd>
+                <dt>Previous Reasoning</dt><dd>Предыдущие рассуждения</dd>
+                <dt>Latest Observation \(o_t\)</dt><dd>Последнее наблюдение \(o_t\)</dd>
+                <dt>Large Language Model</dt><dd>Большая языковая модель</dd>
+                <dt>Execute Action</dt><dd>Выполнить действие</dd>
+                <dt>Ephemeral Reasoning</dt><dd>Временное рассуждение</dd>
+                <dt>Discarded after state projection</dt><dd>Отбрасывается после проекции в состояние</dd>
+                <dt>SKILL.State Runtime</dt><dd>Среда выполнения SKILL.state</dd>
+                <dt>Prompt Context \(\mathcal{O}(1)\)</dt><dd>Контекст промпта \(\mathcal{O}(1)\)</dd>
+                <dt>Execution State \(\Sigma_{t-1}\)</dt><dd>Состояние выполнения \(\Sigma_{t-1}\)</dd>
+                <dt>State Update / JSON Patch \(\Delta\Sigma\)</dt><dd>Обновление состояния / JSON-патч \(\Delta\Sigma\)</dd>
+                <dt>Context Growth Profle</dt><dd>Профиль роста контекста</dd>
+                <dt>Execution Steps \((T)\)</dt><dd>Шаги выполнения \((T)\)</dd>
+                <dt>Max Limit</dt><dd>Предельное значение</dd>
+                <dt>Prompt Size</dt><dd>Размер промпта</dd>
+                <dt>Growing</dt><dd>Растущий</dd>
+                <dt>Bounded</dt><dd>Ограниченный</dd>
+              </dl>
+            </div>
+          </figure>
+
+          <section id="sec-3-1">
+            <h3>3.1 Состояние выполнения и создание схемы</h3>
+            <p>В отличие от диалоговых сред выполнения (runtime), SKILL.state рассматривает состояние выполнения как первоклассную абстракцию среды выполнения (runtime). Состояние содержит только информацию, необходимую для будущего выполнения, и представляется с использованием структурированной схемы, определённой для предметной области. Схемы создаются один раз для каждой предметной области, а не для каждой задачи; например, во всех 100 разнообразных экземплярах задач в бенчмарке InterCode CTF агент повторно использует одну статическую схему из 5 полей (<code>discovered_flags</code>, <code>tested_hypotheses</code>, <code>active_files</code>, <code>working_dir</code>, <code>cmd_summary</code>).</p>
+          </section>
+
+          <section id="sec-3-2">
+            <h3>3.2 Рассуждение и переходы состояния</h3>
+            <p>Рассуждение используется строго как промежуточное вычисление для создания переходов состояния и выбора следующего действия. Исходя из текущего контекста выполнения \((P,\Sigma_t,O_t)\), языковая модель генерирует:</p>
+            <div id="S3.E3" class="equation">\[ (R_t,\Delta\Sigma_t,a_t), \tag{3} \]</div>
+            <p>где \(R_t\) обозначает многошаговый след рассуждений Chain-of-Thought, \(\Delta\Sigma_t\) представляет собой структурированное обновление состояния (JSON-словарь мутаций и удалений ключей), а \(a_t\) — действие, которое нужно выполнить.</p>
+
+            <p>Критически важно, что многошаговое рассуждение внутри шага полностью сохраняется во время генерации для поддержки сложного дедуктивного планирования. Однако после того, как переход состояния проверен и применён, след рассуждений \(R_t\) навсегда отбрасывается и никогда не появляется в последующих промптах. Состояние выполнения обновляется согласно:</p>
+            <div id="S3.E4" class="equation">\[ \Sigma_{t+1}=\Sigma_t\oplus\Delta\Sigma_t, \tag{4} \]</div>
+            <p>где \(\oplus\) обозначает оператор слияния словарей среды выполнения (runtime) с семантикой удаления через <code>null</code>. Эта модель проецирует преходящее рассуждение в постоянное структурированное состояние, так что между взаимодействиями сохраняется только информация, необходимая для будущего выполнения.</p>
+
+            <figure id="alg1" class="algorithm">
+              <figcaption><strong>Алгоритм 1.</strong> Среда выполнения (runtime) SKILL.state</figcaption>
+              <div class="algorithm-body">
+                <div class="algorithm-require"><strong>Require:</strong> процедурная спецификация \(P\), начальное состояние \(\Sigma_0\)</div>
+                <div class="algorithm-line"><span class="line-number">1:</span> Для \(t=0,\ldots,T\) делать</div>
+                <div class="algorithm-line indent-1"><span class="line-number">2:</span> Получить последнее наблюдение \(O_t\)</div>
+                <div class="algorithm-line indent-1"><span class="line-number">3:</span> Сформировать промпт \((P,\Sigma_t,O_t)\)</div>
+                <div class="algorithm-line indent-1"><span class="line-number">4:</span> Сгенерировать \((R_t,\Delta\Sigma_t,a_t)\) с использованием LLM</div>
+                <div class="algorithm-line indent-1"><span class="line-number">5:</span> Проверить \(\Delta\Sigma_t\)</div>
+                <div class="algorithm-line indent-1"><span class="line-number">6:</span> \(\Sigma_{t+1}\leftarrow\Sigma_t\oplus\Delta\Sigma_t\)</div>
+                <div class="algorithm-line indent-1"><span class="line-number">7:</span> Выполнить \(a_t\)</div>
+                <div class="algorithm-line"><span class="line-number">8:</span> Конец для</div>
+              </div>
+            </figure>
+            <p>Алгоритм <a href="#alg1">1</a> обобщает процесс выполнения.</p>
+          </section>
+
+          <section id="sec-3-3">
+            <h3>3.3 Анализ сложности</h3>
+            <p>Пусть \(T\) обозначает горизонт выполнения. Для диалоговых сред выполнения (runtime) длина промпта растёт вместе с накопленной историей взаимодействий, \(|C_t|=\mathcal{O}(t)\), что приводит к совокупной сложности по токенам:</p>
+            <div id="S3.E5" class="equation">\[ \sum_{t=1}^{T}|C_t|=\mathcal{O}(T^{2}). \tag{5} \]</div>
+            <p>В отличие от этого, SKILL.state поддерживает только процедурную спецификацию, структурированное состояние выполнения и последнее наблюдение:</p>
+            <div id="S3.E6" class="equation">\[ |P_t|=\mathcal{O}(|P|+|\Sigma|+|O|), \tag{6} \]</div>
+            <p>что асимптотически ограничено и не зависит от числа ранее выполненных ходов \(t\). Следовательно, совокупная сложность промпта растёт строго линейно с горизонтом выполнения:</p>
+            <div id="S3.E7" class="equation">\[ \sum_{t=1}^{T}|P_t|=\mathcal{O}(T). \tag{7} \]</div>
+            <p>Таким образом, среда выполнения (runtime) смещает выполнение от восстановления истории к поддержанию явного проверенного представления текущего состояния выполнения.</p>
+          </section>
+        </section>
+
+        <section id="appendix-d" class="appendix">
+          <h2>Приложение D. Дополнительные результаты</h2>
+
+          <figure id="Ax4.T6" class="table-wrap wide-table">
+            <table>
+              <caption><strong>Таблица 6:</strong> Масштабирование выполнения программного репозитория на длинном горизонте с использованием с использованием Gemini-3-Flash. Базовые среды выполнения испытывают катастрофический коллапс контекста \(O(N^2)\), тогда как SKILL.state сохраняет размер промпта \(O(1)\).</caption>
+              <thead><tr><th scope="col">Горизонт</th><th scope="col">Среда выполнения</th><th scope="col">Score</th><th scope="col">Средний размер промпта</th><th scope="col">Всего потреблено токенов</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="4">10</th><td>Prompt</td><td class="numeric">0.89 ± 0.11</td><td class="numeric">3,411 ± 197</td><td class="numeric">11,670 ± 841</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.93 ± 0.09</td><td class="numeric">4,379 ± 234</td><td class="numeric">15,732 ± 562</td></tr>
+                <tr><td>Stateful</td><td class="numeric">1.00 ± 0.00</td><td class="numeric">4,200 ± 321</td><td class="numeric">14,120 ± 318</td></tr>
+                <tr><th scope="row"><strong>SKILL.state</strong></th><td class="numeric"><strong>1.00 ± 0.00</strong></td><td class="numeric"><strong>2,298 ± 134</strong></td><td class="numeric"><strong>7,608 ± 149</strong></td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">25</th><td>Prompt</td><td class="numeric">0.84 ± 0.05</td><td class="numeric">11,754 ± 608</td><td class="numeric">111,970 ± 3,314</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.89 ± 0.07</td><td class="numeric">9,399 ± 317</td><td class="numeric">94,629 ± 2,839</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.94 ± 0.03</td><td class="numeric">14,016 ± 586</td><td class="numeric">128,702 ± 3,863</td></tr>
+                <tr><th scope="row"><strong>SKILL.state</strong></th><td class="numeric"><strong>0.88 ± 0.08</strong></td><td class="numeric"><strong>2,545 ± 556</strong></td><td class="numeric"><strong>21,920 ± 431</strong></td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">50</th><td>Prompt</td><td class="numeric">0.71 ± 0.14</td><td class="numeric">23,136 ± 911</td><td class="numeric">462,118 ± 13,764</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.65 ± 0.12</td><td class="numeric">35,550 ± 2,412</td><td class="numeric">688,182 ± 23,539</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.74 ± 0.08</td><td class="numeric">31,166 ± 3,231</td><td class="numeric">577,027 ± 27,293</td></tr>
+                <tr><th scope="row"><strong>SKILL.state</strong></th><td class="numeric"><strong>0.86 ± 0.04</strong></td><td class="numeric"><strong>2,545 ± 63</strong></td><td class="numeric"><strong>45,100 ± 894</strong></td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">100</th><td>Prompt</td><td class="numeric">0.53 ± 0.16</td><td class="numeric">46,270 ± 1,847</td><td class="numeric">1,848,500 ± 55,391</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.57 ± 0.05</td><td class="numeric">71,100 ± 5,836</td><td class="numeric">2,752,700 ± 82,467</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.63 ± 0.10</td><td class="numeric">62,330 ± 2,488</td><td class="numeric">2,308,000 ± 35,183</td></tr>
+                <tr><th scope="row"><strong>SKILL.state</strong></th><td class="numeric"><strong>0.78 ± 0.08</strong></td><td class="numeric"><strong>2,545 ± 471</strong></td><td class="numeric"><strong>90,200 ± 2,792</strong></td></tr>
+              </tbody>
+            </table>
+          </figure>
+
+          <figure id="Ax4.T7" class="table-wrap wide-table">
+            <table>
+              <caption><strong>Таблица 7:</strong> Масштабирование склада для Gemma-4-31b-it.</caption>
+              <thead><tr><th scope="col">Горизонт</th><th scope="col">Среда выполнения</th><th scope="col">Score ± SD</th><th scope="col">Средний промпт ± SD</th><th scope="col">Всего токенов ± SD</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="4">10 шагов</th><td>Prompt</td><td class="numeric">0.90 ± 3.1%</td><td class="numeric">3,145 ± 242</td><td class="numeric">9,092 ± 1,231</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.85 ± 4.2%</td><td class="numeric">2,611 ± 138</td><td class="numeric">7,330 ± 838</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.90 ± 2.8%</td><td class="numeric">3,191 ± 149</td><td class="numeric">9,144 ± 518</td></tr>
+                <tr><th scope="row">SKILL.state</th><td class="numeric">0.98 ± 1.5%</td><td class="numeric"><strong>2,116 ± 212</strong></td><td class="numeric"><strong>6,814 ± 875</strong></td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">25 шагов</th><td>Prompt</td><td class="numeric">0.64 ± 5.4%</td><td class="numeric">5,720 ± 182</td><td class="numeric">41,697 ± 1,610</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.72 ± 4.8%</td><td class="numeric">3,990 ± 362</td><td class="numeric">28,933 ± 412</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.76 ± 4.1%</td><td class="numeric">5,714 ± 282</td><td class="numeric">39,314 ± 585</td></tr>
+                <tr><th scope="row">SKILL.state</th><td class="numeric">0.84 ± 3.6%</td><td class="numeric"><strong>2,080 ± 114</strong></td><td class="numeric"><strong>16,302 ± 2,190</strong></td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">50 шагов</th><td>Prompt</td><td class="numeric">0.31 ± 6.2%</td><td class="numeric">10,809 ± 352</td><td class="numeric">151,845 ± 2,150</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.41 ± 5.8%</td><td class="numeric">7,217 ± 316</td><td class="numeric">114,113 ± 1,620</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.55 ± 5.1%</td><td class="numeric">11,083 ± 262</td><td class="numeric">155,164 ± 2,210</td></tr>
+                <tr><th scope="row">SKILL.state</th><td class="numeric">0.68 ± 3.9%</td><td class="numeric"><strong>2,113 ± 176</strong></td><td class="numeric"><strong>33,762 ± 1,385</strong></td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">100 шагов</th><td>Prompt</td><td class="numeric">0.21 ± 4.7%</td><td class="numeric">27,686 ± 412</td><td class="numeric">923,164 ± 12,400</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.24 ± 4.2%</td><td class="numeric">18,537 ± 229</td><td class="numeric">701,954 ± 9,850</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.42 ± 4.5%</td><td class="numeric">20,210 ± 822</td><td class="numeric">557,968 ± 8,100</td></tr>
+                <tr><th scope="row">SKILL.state</th><td class="numeric">0.42 ± 4.1%</td><td class="numeric"><strong>2,105 ± 216</strong></td><td class="numeric"><strong>65,480 ± 1,258</strong></td></tr>
+              </tbody>
+            </table>
+          </figure>
+
+          <figure id="Ax4.T8" class="table-wrap wide-table">
+            <table>
+              <caption><strong>Таблица 8:</strong> Масштабирование склада для Qwen 3-8b-it.</caption>
+              <thead><tr><th scope="col">Горизонт</th><th scope="col">Среда выполнения</th><th scope="col">Score ± SD</th><th scope="col">Средний промпт ± SD</th><th scope="col">Всего токенов ± SD</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="4">10 шагов</th><td>Prompt</td><td class="numeric">0.84 ± 3.8%</td><td class="numeric">3,150 ± 245</td><td class="numeric">9,150 ± 1,250</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.80 ± 4.5%</td><td class="numeric">2,640 ± 145</td><td class="numeric">7,420 ± 860</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.84 ± 3.4%</td><td class="numeric">3,210 ± 155</td><td class="numeric">9,210 ± 540</td></tr>
+                <tr><th scope="row">SKILL.state</th><td class="numeric">0.94 ± 2.1%</td><td class="numeric"><strong>2,120 ± 215</strong></td><td class="numeric"><strong>6,920 ± 890</strong></td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">25 шагов</th><td>Prompt</td><td class="numeric">0.54 ± 6.1%</td><td class="numeric">5,790 ± 195</td><td class="numeric">42,450 ± 1,680</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.62 ± 5.4%</td><td class="numeric">4,050 ± 375</td><td class="numeric">29,640 ± 440</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.66 ± 4.8%</td><td class="numeric">5,780 ± 295</td><td class="numeric">39,950 ± 610</td></tr>
+                <tr><th scope="row">SKILL.state</th><td class="numeric">0.76 ± 4.2%</td><td class="numeric"><strong>2,088 ± 120</strong></td><td class="numeric"><strong>16,680 ± 2,240</strong></td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">50 шагов</th><td>Prompt</td><td class="numeric">0.24 ± 6.5%</td><td class="numeric">10,950 ± 365</td><td class="numeric">154,200 ± 2,280</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.33 ± 6.1%</td><td class="numeric">7,320 ± 330</td><td class="numeric">116,400 ± 1,710</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.44 ± 5.7%</td><td class="numeric">11,210 ± 280</td><td class="numeric">158,300 ± 2,340</td></tr>
+                <tr><th scope="row">SKILL.state</th><td class="numeric">0.58 ± 4.5%</td><td class="numeric"><strong>2,118 ± 185</strong></td><td class="numeric"><strong>34,510 ± 1,420</strong></td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">100 шагов</th><td>Prompt</td><td class="numeric">0.15 ± 5.1%</td><td class="numeric">28,150 ± 430</td><td class="numeric">941,500 ± 12,800</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.18 ± 4.6%</td><td class="numeric">18,840 ± 245</td><td class="numeric">718,200 ± 10,200</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.31 ± 4.9%</td><td class="numeric">20,580 ± 850</td><td class="numeric">569,400 ± 8,450</td></tr>
+                <tr><th scope="row">SKILL.state</th><td class="numeric">0.34 ± 4.6%</td><td class="numeric"><strong>2,110 ± 220</strong></td><td class="numeric"><strong>66,850 ± 1,310</strong></td></tr>
+              </tbody>
+            </table>
+          </figure>
+
+          <figure id="Ax4.T9" class="table-wrap tight-table">
+            <table>
+              <caption><strong>Таблица 9:</strong> Эксперимент 2 в программном репозитории, то есть устойчивость к шуму. Оценка устойчивости сред выполнения к нерелевантной телеметрии syslog (условие 1) на горизонте в 50 шагов с использованием Gemini-3-Flash.</caption>
+              <thead><tr><th scope="col">Уровень шума</th><th scope="col">Среда выполнения</th><th scope="col">Score</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="4">0 событий<br>(базовый уровень)</th><td>Prompt</td><td class="numeric">0.76</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.85</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.88</td></tr>
+                <tr><td>SKILL.state</td><td class="numeric">0.90</td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">5 событий<br>(низкий)</th><td>Prompt</td><td class="numeric">0.62</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.85</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.86</td></tr>
+                <tr><td>SKILL.state</td><td class="numeric">0.88</td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">20 событий<br>(средний)</th><td>Prompt</td><td class="numeric">0.48</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.83</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.85</td></tr>
+                <tr><td>SKILL.state</td><td class="numeric">0.86</td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">50 событий<br>(высокий)</th><td>Prompt</td><td class="numeric">0.11</td></tr>
+                <tr><td>Memory</td><td class="numeric">0.74</td></tr>
+                <tr><td>Stateful</td><td class="numeric">0.78</td></tr>
+                <tr><td>SKILL.state</td><td class="numeric">0.80</td></tr>
+              </tbody>
+            </table>
+          </figure>
+
+          <h3 id="appendix-d-1">.1 Восстановление состояния программного репозитория в эксперименте 3 с использованием Gemini-3-Flash</h3>
+          <figure id="Ax4.T10" class="table-wrap tight-table">
+            <table>
+              <caption><strong>Таблица 10:</strong> Восстановление состояния программного репозитория (среда 2, эксперимент 3). Сравнение задержки галлюцинаций (число шагов восстановления), когда состояние репозитория изменяется посредством неструктурированных оповещений.</caption>
+              <thead><tr><th scope="col">Сценарий</th><th scope="col">Среда выполнения</th><th scope="col">Успех</th><th scope="col">Шаги восстановления</th></tr></thead>
+              <tbody>
+                <tr><th scope="rowgroup" rowspan="4">A: Принудительная отправка (Force Push)</th><td>Prompt</td><td class="center">Да</td><td class="numeric">12</td></tr>
+                <tr><td>Memory</td><td class="center">Да</td><td class="numeric">8</td></tr>
+                <tr><td>Stateful</td><td class="center">Да</td><td class="numeric">10</td></tr>
+                <tr><th scope="row">SKILL.state</th><td class="center"><strong>Да</strong></td><td class="numeric"><strong>0</strong></td></tr>
+                <tr class="group-start"><th scope="rowgroup" rowspan="4">B: Нестабильный тест CI (Flaky CI Test)</th><td>Prompt</td><td class="center">Да</td><td class="numeric">14</td></tr>
+                <tr><td>Memory</td><td class="center">Да</td><td class="numeric">9</td></tr>
+                <tr><td>Stateful</td><td class="center">Да</td><td class="numeric">11</td></tr>
+                <tr><th scope="row">SKILL.state</th><td class="center"><strong>Да</strong></td><td class="numeric"><strong>0</strong></td></tr>
+                <tr class="group-start"><th scope="row">C: PR закрыт (PR Closed)</th><td>Все среды выполнения</td><td class="center">Нет</td><td class="center">N/A</td></tr>
+              </tbody>
+            </table>
+          </figure>
+
+          <h3 id="appendix-d-2">.2 Расширенное масштабирование при сопоставимом бюджете по горизонтам</h3>
+          <p>В <a href="#Ax4.T11">Таблице 11</a> представлены полные результаты масштабирования по нескольким горизонтам для конфигураций контроля с сопоставимым бюджетом в складской среде (\(T\in\{10,25,50,100\}\), Gemini-3-Flash), оценённых по 5 начальным значениям среды. При коротких горизонтах (\(T=10\)) все среды выполнения с сопоставимым бюджетом показывают сопоставимые результаты, тогда как усечение скользящим окном и статистическое сжатие перплексии (LLMLingua) испытывают катастрофический коллапс точности по мере увеличения длины горизонта; SKILL.state сохраняет устойчивую производительность на всех горизонтах.</p>
+
+          <figure id="Ax4.T11" class="table-wrap tight-table">
+            <table>
+              <caption><strong>Таблица 11:</strong> Масштабирование при сопоставимом бюджете в складской среде по горизонтам (Gemini-3-Flash, целевой бюджет \(\sim\)1,800 токенов, Score ± SD по 5 начальным значениям).</caption>
+              <thead><tr><th scope="col">Горизонт \(T\)</th><th scope="col">SKILL.state</th><th scope="col">Summary-capped</th><th scope="col">Truncated (Window)</th><th scope="col">ReAct + LLMLingua</th><th scope="col">ReAct (Full)</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">10</th><td class="numeric"><strong>1.00 ± 0.00</strong></td><td class="numeric">0.92 ± 0.03</td><td class="numeric">0.90 ± 0.04</td><td class="numeric">0.88 ± 0.04</td><td class="numeric">0.90 ± 0.02</td></tr>
+                <tr><th scope="row">25</th><td class="numeric"><strong>1.00 ± 0.00</strong></td><td class="numeric">0.76 ± 0.04</td><td class="numeric">0.62 ± 0.05</td><td class="numeric">0.60 ± 0.05</td><td class="numeric">0.92 ± 0.02</td></tr>
+                <tr><th scope="row">50</th><td class="numeric"><strong>0.96 ± 0.01</strong></td><td class="numeric">0.64 ± 0.05</td><td class="numeric">0.35 ± 0.06</td><td class="numeric">0.38 ± 0.06</td><td class="numeric">0.88 ± 0.04</td></tr>
+                <tr><th scope="row">100</th><td class="numeric"><strong>0.94 ± 0.01</strong></td><td class="numeric">0.52 ± 0.05</td><td class="numeric">0.18 ± 0.05</td><td class="numeric">0.22 ± 0.05</td><td class="numeric">0.84 ± 0.07</td></tr>
+              </tbody>
+            </table>
+          </figure>
+        </section>
+
+        <footer id="site-footer">
+          <p>Русская версия подготовлена по <a href="https://arxiv.org/abs/2608.26263v3" rel="noreferrer">arXiv:2608.26263v3</a>. Оригинал: <a href="https://arxiv.org/abs/2608.26263v3" rel="noreferrer">страница arXiv</a> · <a href="https://arxiv.org/pdf/2608.26263v3" rel="noreferrer">PDF</a> · <a href="https://doi.org/10.48550/arXiv.2608.26263" rel="noreferrer">DOI</a>.</p>
+          <p>Активный рисунок 1 сохранён как исходный векторный SVG; его английские надписи имеют соседний полный перевод, поскольку в исходнике они представлены контурами шрифта.</p>
+        </footer>
+      </main>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
