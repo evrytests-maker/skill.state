@@ -1,8 +1,0 @@
-{
-  "name": "skill-state-ru",
-  "private": true,
-  "scripts": {
-    "start": "node server.cjs",
-    "dev": "node server.cjs"
-  }
-}
